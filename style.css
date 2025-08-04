@@ -51,13 +51,12 @@ h1 {
 }
 
 canvas {
-  /* CSS size matches the canvas’s width/height attributes */
   width: 300px;
   height: 400px;
   background: #cceeff;
   border: 1px solid #444;
   border-radius: 4px;
-  touch-action: none;   /* disable browser gestures */
+  touch-action: none;   /* disable scroll/pinch */
   display: block;
   margin: 0 auto;
 }
