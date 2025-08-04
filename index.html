@@ -37,13 +37,12 @@
       font-size: 0.9rem;
     }
     canvas {
-      /* internal resolution = CSS size */
       width: 300px;
       height: 400px;
       background: #cceeff;
       border:1px solid #444;
       border-radius:4px;
-      touch-action: none;   /* important! */
+      touch-action: none;  /* already blocking browser gestures */
       display: block;
       margin: 0 auto;
     }
@@ -51,10 +50,11 @@
 </head>
 <body>
   <div class="container">
-    <div id="start-screen" class="setup">
+    <!-- start screen -->
+    <div id="start-screen">
       <h1>🐦 Flappy Bird</h1>
       <div class="inputs">
-        <input type="text" id="playerName" placeholder="Enter your name" />
+        <input type="text" id="playerName" placeholder="Enter your name">
         <select id="difficulty">
           <option value="easy">Easy</option>
           <option value="medium" selected>Medium</option>
@@ -64,6 +64,7 @@
       </div>
     </div>
 
+    <!-- game screen -->
     <div id="game-screen" class="hidden">
       <div id="scoreboard">
         <span id="score">Score: 0</span>
@@ -75,7 +76,6 @@
       </div>
     </div>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
