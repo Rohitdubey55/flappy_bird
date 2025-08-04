@@ -9,7 +9,7 @@ const canvas      = document.getElementById('gameCanvas');
 const ctx         = canvas.getContext('2d');
 
 // Game config placeholders
-let gravity, lift, speed, gap;
+let gravity, lift, pipeSpeed, gap;
 let player;
 
 // Persistent high score
@@ -18,6 +18,7 @@ highEl.textContent = `High: ${high}`;
 
 // Shared game state
 let bird, pipes, score, running;
+let lastTime = 0;
 
 // Initialize a new round
 function initGame() {
@@ -28,6 +29,7 @@ function initGame() {
   scoreEl.textContent = `Score: ${score}`;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBird();
+  lastTime = performance.now();
   requestAnimationFrame(gameLoop);
 }
 
@@ -36,24 +38,36 @@ startBtn.addEventListener('click', () => {
   player = document.getElementById('playerName').value.trim() || 'Player';
   const lvl = document.getElementById('difficulty').value;
 
-  // **Even gentler movement values**
-  if (lvl === 'easy')   { gravity = 0.3; lift = -3; speed = 1.5; gap = 120; }
-  if (lvl === 'medium') { gravity = 0.28; lift = -3.5; speed = 2;   gap = 110;  }
-  if (lvl === 'hard')   { gravity = 0.25; lift = -4; speed = 2.5; gap = 100;  }
+  // per-second values
+  if (lvl === 'easy') {
+    gravity   = 300;   // px/s²
+    lift      = -200;  // px/s impulse
+    pipeSpeed = 100;   // px/s
+    gap       = 120;   // px
+  }
+  if (lvl === 'medium') {
+    gravity   = 400;
+    lift      = -250;
+    pipeSpeed = 150;
+    gap       = 90;
+  }
+  if (lvl === 'hard') {
+    gravity   = 500;
+    lift      = -300;
+    pipeSpeed = 200;
+    gap       = 70;
+  }
 
   startScreen.classList.add('hidden');
   gameScreen.classList.remove('hidden');
   initGame();
 });
 
-// Reset button—works for clicks, pointers, and touches
-function onReset(e) {
-  e.preventDefault && e.preventDefault();
+// Reset button handler
+resetBtn.addEventListener('click', e => {
+  e.preventDefault();
   initGame();
-}
-resetBtn.addEventListener('click',  onReset);
-resetBtn.addEventListener('pointerdown', onReset);
-resetBtn.addEventListener('touchstart',  onReset, { passive: false });
+});
 
 // Draw the bird
 function drawBird() {
@@ -61,15 +75,17 @@ function drawBird() {
   ctx.fillRect(bird.x, bird.y, bird.w, bird.h);
 }
 
-// Main loop
-function gameLoop() {
+// Main loop with time delta
+function gameLoop(now) {
   if (!running) return;
+  const dt = (now - lastTime) / 1000;  // delta in seconds
+  lastTime = now;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Bird physics
-  bird.v += gravity;
-  bird.y += bird.v;
+  // Bird physics: v += a * dt; y += v * dt
+  bird.v += gravity * dt;
+  bird.y += bird.v * dt;
 
   // Out of bounds?
   if (bird.y < 0 || bird.y + bird.h > canvas.height) {
@@ -77,26 +93,26 @@ function gameLoop() {
   }
 
   drawBird();
-  updatePipes();
+  updatePipes(dt);
   requestAnimationFrame(gameLoop);
 }
 
-// Pipes logic + collision + scoring
-function updatePipes() {
+function updatePipes(dt) {
+  // spawn
   if (!pipes.length || pipes[pipes.length - 1].x < canvas.width - 140) {
     const top = Math.random() * (canvas.height - gap - 40) + 20;
     pipes.push({ x: canvas.width, top, passed: false });
   }
 
   pipes.forEach((p, i) => {
-    p.x -= speed;
+    p.x -= pipeSpeed * dt;
 
-    // Draw
+    // draw
     ctx.fillStyle = 'green';
     ctx.fillRect(p.x, 0, 24, p.top);
     ctx.fillRect(p.x, p.top + gap, 24, canvas.height);
 
-    // Collision
+    // collision
     if (
       bird.x < p.x + 24 &&
       bird.x + bird.w > p.x &&
@@ -105,7 +121,7 @@ function updatePipes() {
       return endGame();
     }
 
-    // Score
+    // score
     if (!p.passed && p.x + 24 < bird.x) {
       p.passed = true;
       score++;
@@ -117,7 +133,7 @@ function updatePipes() {
       scoreEl.textContent = `Score: ${score}`;
     }
 
-    // Remove off-screen
+    // cleanup
     if (p.x + 24 < 0) pipes.splice(i, 1);
   });
 }
@@ -130,12 +146,12 @@ function endGame() {
   }, 50);
 }
 
-// Flap logic
+// Flap logic: instantaneous v = lift
 function flap() {
   if (running) bird.v = lift;
 }
 
-// Input listeners for flap
+// Input listeners
 window.addEventListener('keydown', e => {
   if (e.code === 'Space') flap();
 });
