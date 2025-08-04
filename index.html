@@ -3,21 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Flappy Bird</title>
+  <title>Flappy Bird Game</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="game-container">
+  <div class="container">
     <h1>Flappy Bird</h1>
-    <div class="score-board">
-      Score: <span id="score">0</span> | High Score: <span id="highScore">0</span>
+
+    <div class="setup">
+      <input type="text" id="playerName" placeholder="Enter your name" />
+      <select id="difficulty">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+      <button onclick="startGame()">Start Game</button>
     </div>
+
+    <div class="scoreboard">
+      Player: <span id="playerDisplay">-</span> |
+      Score: <span id="score">0</span> |
+      High Score: <span id="highScore">0</span>
+    </div>
+
     <canvas id="gameCanvas" width="320" height="480"></canvas>
+
     <div class="buttons">
-      <button onclick="restartGame()">Restart</button>
       <button onclick="flap()">Tap</button>
+      <button onclick="restartGame()">Restart</button>
     </div>
   </div>
+
   <script src="script.js"></script>
 </body>
 </html>
