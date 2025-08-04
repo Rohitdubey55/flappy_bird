@@ -9,10 +9,10 @@ const canvas      = document.getElementById('gameCanvas');
 const ctx         = canvas.getContext('2d');
 
 // — Game state —
-let bird = { x: 40, y: 120, w: 18, h: 18, v: 0 };
+let bird    = { x: 40, y: 120, w: 18, h: 18, v: 0 };
 let gravity = 0.6, lift = -10;
-let pipes = [], gap = 90, speed = 2, pw = 24;
-let score = 0, high = 0, running = false, player = 'Player';
+let pipes   = [], gap = 90, speed = 2, pw = 24;
+let score   = 0, high = 0, running = false, player = 'Player';
 
 // load high score
 high = parseInt(localStorage.getItem('flappyBirdHigh')) || 0;
@@ -22,9 +22,9 @@ highEl.textContent = `High: ${high}`;
 startBtn.addEventListener('click', () => {
   player = document.getElementById('playerName').value.trim() || 'Player';
   const lvl = document.getElementById('difficulty').value;
-  if (lvl==='easy')   { gravity=0.5; speed=1.5; gap=110; }
-  if (lvl==='medium') { gravity=0.6; speed=2;   gap=90; }
-  if (lvl==='hard')   { gravity=0.75; speed=3;  gap=70; }
+  if (lvl === 'easy')   { gravity=0.5; speed=1.5; gap=110; }
+  if (lvl === 'medium') { gravity=0.6; speed=2;   gap=90;  }
+  if (lvl === 'hard')   { gravity=0.75; speed=3;  gap=70;  }
 
   startScreen.classList.add('hidden');
   gameScreen.classList.remove('hidden');
@@ -69,8 +69,11 @@ function loop(){
     ctx.fillRect(p.x, p.top+gap, pw, canvas.height);
 
     // collision
-    if (bird.x < p.x+pw && bird.x+bird.w > p.x &&
-        (bird.y < p.top || bird.y+bird.h > p.top+gap)) {
+    if (
+      bird.x < p.x+pw &&
+      bird.x+bird.w > p.x &&
+      (bird.y < p.top || bird.y+bird.h > p.top+gap)
+    ) {
       return endGame();
     }
 
@@ -93,30 +96,39 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
+// — draw bird —
 function drawBird(){
   ctx.fillStyle = 'orange';
   ctx.fillRect(bird.x, bird.y, bird.w, bird.h);
 }
 
+// — end game —
 function endGame(){
   running = false;
-  setTimeout(()=> alert(`${player}, Game Over!\nYour Score: ${score}`), 50);
+  setTimeout(() => {
+    alert(`${player}, Game Over!\nYour Score: ${score}`);
+  }, 50);
 }
 
 // — flap handler —
-// unified for all input types
+// bind on the **canvas** for maximum reliability:
 function onFlap(e){
   if (running) bird.v = lift;
 }
 
-// desktop: spacebar
+// 1) desktop: spacebar
 window.addEventListener('keydown', e => {
   if (e.code === 'Space') onFlap(e);
 });
-// pointerdown (mouse & stylus)
-window.addEventListener('pointerdown', onFlap);
-// fallback for touch-only browsers
-window.addEventListener('touchstart', e => {
+// 2) pointer: mouse & stylus (some mobiles)
+canvas.addEventListener('pointerdown', onFlap);
+// 3) touchstart (legacy & WebViews)
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  onFlap(e);
+}, { passive: false });
+// 4) touchend (some browsers only fire this)
+canvas.addEventListener('touchend', e => {
   e.preventDefault();
   onFlap(e);
 }, { passive: false });
