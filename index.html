@@ -37,19 +37,20 @@
       font-size: 0.9rem;
     }
     canvas {
-      width: 100%;
-      height: auto;
+      /* internal resolution = CSS size */
+      width: 300px;
+      height: 400px;
       background: #cceeff;
       border:1px solid #444;
       border-radius:4px;
-      touch-action: none;
+      touch-action: none;   /* important! */
+      display: block;
+      margin: 0 auto;
     }
   </style>
 </head>
 <body>
   <div class="container">
-
-    <!-- START SCREEN -->
     <div id="start-screen" class="setup">
       <h1>🐦 Flappy Bird</h1>
       <div class="inputs">
@@ -63,7 +64,6 @@
       </div>
     </div>
 
-    <!-- GAME SCREEN -->
     <div id="game-screen" class="hidden">
       <div id="scoreboard">
         <span id="score">Score: 0</span>
@@ -74,7 +74,6 @@
         <button id="resetBtn">Reset</button>
       </div>
     </div>
-
   </div>
 
   <script src="script.js"></script>
