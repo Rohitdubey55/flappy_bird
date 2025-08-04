@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Flappy Bird Clone</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="game-container">
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+    <div class="instructions">
+      Press <strong>Space</strong> or <strong>Tap</strong> to Flap
+    </div>
+    <div class="score-panel">
+      🏆 High Score: <span id="highScore">0</span>
+    </div>
+    <button id="restartBtn" onclick="restartGame()">🔄 Restart Game</button>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
