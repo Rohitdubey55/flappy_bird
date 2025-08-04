@@ -1,1 +1,63 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
+body {
+  font-family: sans-serif;
+  background: #87CEEB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.container {
+  background: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  width: 100%;
+  max-width: 340px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: 1.3rem;
+}
+
+.hidden {
+  display: none;
+}
+
+.inputs input,
+.inputs select,
+.inputs button {
+  width: 100%;
+  margin: 6px 0;
+  padding: 8px;
+  font-size: 1rem;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+}
+
+#scoreboard {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.9rem;
+}
+
+canvas {
+  /* CSS size matches the canvas’s width/height attributes */
+  width: 300px;
+  height: 400px;
+  background: #cceeff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  touch-action: none;   /* disable browser gestures */
+  display: block;
+  margin: 0 auto;
+}
