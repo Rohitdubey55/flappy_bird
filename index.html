@@ -4,26 +4,77 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Flappy Bird</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      font-family: sans-serif;
+      background: #87CEEB;
+      display: flex; align-items: center; justify-content: center;
+      height: 100vh;
+    }
+    .container {
+      background: #fff; padding:12px;
+      border-radius: 8px; text-align: center;
+      width: 100%; max-width: 340px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    h1 { margin-bottom: 8px; font-size:1.3rem; }
+    .hidden { display: none; }
+    .inputs input,
+    .inputs select,
+    .inputs button {
+      width: 100%;
+      margin: 6px 0;
+      padding: 8px;
+      font-size: 1rem;
+      border:1px solid #aaa;
+      border-radius:4px;
+    }
+    #scoreboard {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 0.9rem;
+    }
+    canvas {
+      width: 100%;
+      height: auto;
+      background: #cceeff;
+      border:1px solid #444;
+      border-radius:4px;
+      touch-action: none;
+    }
+  </style>
 </head>
 <body>
-  <div class="game-container">
-    <h1>Flappy Bird</h1>
-    <div class="inputs">
-      <input type="text" id="playerName" placeholder="Enter your name" />
-      <select id="difficulty">
-        <option value="easy">Easy</option>
-        <option value="medium" selected>Medium</option>
-        <option value="hard">Hard</option>
-      </select>
-      <button onclick="startGame()">Start</button>
-      <button onclick="resetGame()">Reset</button>
+  <div class="container">
+
+    <!-- START SCREEN -->
+    <div id="start-screen" class="setup">
+      <h1>🐦 Flappy Bird</h1>
+      <div class="inputs">
+        <input type="text" id="playerName" placeholder="Enter your name" />
+        <select id="difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+        <button id="startBtn">Start Game</button>
+      </div>
     </div>
-    <div id="scoreboard">
-      <span id="score">Score: 0</span>
-      <span id="highScore">High: 0</span>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="hidden">
+      <div id="scoreboard">
+        <span id="score">Score: 0</span>
+        <span id="highScore">High: 0</span>
+      </div>
+      <canvas id="gameCanvas" width="300" height="400"></canvas>
+      <div class="inputs">
+        <button id="resetBtn">Reset</button>
+      </div>
     </div>
-    <canvas id="gameCanvas" width="300" height="400"></canvas>
+
   </div>
 
   <script src="script.js"></script>
