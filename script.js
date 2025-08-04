@@ -37,9 +37,9 @@ startBtn.addEventListener('click', () => {
   const lvl = document.getElementById('difficulty').value;
 
   // **Even gentler movement values**
-  if (lvl === 'easy')   { gravity = 0.2; lift = -3; speed = 1.5; gap = 120; }
-  if (lvl === 'medium') { gravity = 0.3; lift = -4; speed = 2;   gap = 90;  }
-  if (lvl === 'hard')   { gravity = 0.4; lift = -5; speed = 2.5; gap = 70;  }
+  if (lvl === 'easy')   { gravity = 0.3; lift = -3; speed = 1.5; gap = 120; }
+  if (lvl === 'medium') { gravity = 0.28; lift = -3.5; speed = 2;   gap = 110;  }
+  if (lvl === 'hard')   { gravity = 0.25; lift = -4; speed = 2.5; gap = 100;  }
 
   startScreen.classList.add('hidden');
   gameScreen.classList.remove('hidden');
