@@ -1,112 +1,60 @@
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-let birdY = 200;
-let birdVelocity = 0;
-let gravity = 0.6;
-let isGameOver = false;
-let pipes = [];
-let score = 0;
-let highScore = localStorage.getItem("highScore") || 0;
-
-document.getElementById("highScore").textContent = highScore;
-
-function drawBird() {
-  ctx.fillStyle = "yellow";
-  ctx.beginPath();
-  ctx.arc(60, birdY, 15, 0, Math.PI * 2);
-  ctx.fill();
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(to bottom, #87CEEB, #ffffff);
+  font-family: 'Arial', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 
-function drawPipes() {
-  ctx.fillStyle = "green";
-  pipes.forEach(pipe => {
-    ctx.fillRect(pipe.x, 0, 50, pipe.top);
-    ctx.fillRect(pipe.x, pipe.top + pipe.gap, 50, canvas.height - pipe.top - pipe.gap);
-  });
+.container {
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
 }
 
-function updatePipes() {
-  pipes.forEach(pipe => {
-    pipe.x -= 2;
-
-    if (!pipe.passed && pipe.x < 60) {
-      score++;
-      document.getElementById("score").textContent = score;
-      pipe.passed = true;
-    }
-
-    if (pipe.x + 50 < 0) {
-      pipes.shift();
-    }
-  });
-
-  if (pipes.length === 0 || pipes[pipes.length - 1].x < 200) {
-    const top = Math.random() * 200 + 50;
-    pipes.push({ x: canvas.width, top: top, gap: 120, passed: false });
-  }
+h1 {
+  color: #ff4500;
+  margin-bottom: 10px;
 }
 
-function checkCollision() {
-  for (let pipe of pipes) {
-    if (
-      60 + 15 > pipe.x &&
-      60 - 15 < pipe.x + 50 &&
-      (birdY - 15 < pipe.top || birdY + 15 > pipe.top + pipe.gap)
-    ) {
-      gameOver();
-    }
-  }
-
-  if (birdY + 15 >= canvas.height || birdY - 15 <= 0) {
-    gameOver();
-  }
+canvas {
+  background-color: #add8e6;
+  border: 2px solid #333;
+  border-radius: 10px;
+  width: 100%;
+  height: auto;
+  margin: 10px 0;
 }
 
-function flap() {
-  if (isGameOver) return;
-  birdVelocity = -8;
+.setup {
+  margin-bottom: 10px;
 }
 
-function gameOver() {
-  isGameOver = true;
-  if (score > highScore) {
-    highScore = score;
-    localStorage.setItem("highScore", highScore);
-  }
-  alert("Game Over! Your score: " + score);
+input, select, button {
+  padding: 8px;
+  margin: 5px;
+  font-size: 1rem;
 }
 
-function restartGame() {
-  birdY = 200;
-  birdVelocity = 0;
-  isGameOver = false;
-  pipes = [];
-  score = 0;
-  document.getElementById("score").textContent = score;
-  document.getElementById("highScore").textContent = highScore;
+.scoreboard {
+  font-weight: bold;
+  margin-bottom: 5px;
 }
 
-function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  if (!isGameOver) {
-    birdVelocity += gravity;
-    birdY += birdVelocity;
-    updatePipes();
-    checkCollision();
-  }
-
-  drawBird();
-  drawPipes();
-  requestAnimationFrame(gameLoop);
+.buttons {
+  margin-top: 5px;
 }
 
-document.addEventListener("keydown", function (e) {
-  if (e.code === "Space") {
-    flap();
-  }
-});
+button {
+  background-color: #ffcc00;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
 
-canvas.addEventListener("click", flap); // For mobile
-gameLoop();
+button:hover {
+  background-color: #ffa500;
+}
