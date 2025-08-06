@@ -1,162 +1,340 @@
-// DOM refs
-const startScreen = document.getElementById('start-screen');
-const gameScreen  = document.getElementById('game-screen');
-const startBtn    = document.getElementById('startBtn');
-const resetBtn    = document.getElementById('resetBtn');
-const scoreEl     = document.getElementById('score');
-const highEl      = document.getElementById('highScore');
-const canvas      = document.getElementById('gameCanvas');
-const ctx         = canvas.getContext('2d');
+// --- Tab Switching ---
+const tabs   = document.querySelectorAll('.tab');
+const panels = {
+  settings:    document.getElementById('settings'),
+  shop:        document.getElementById('shop'),
+  leaderboard: document.getElementById('leaderboard')
+};
+tabs.forEach(btn =>
+  btn.addEventListener('click', () => switchPanel(btn.dataset.tab))
+);
+function switchPanel(key){
+  tabs.forEach(b => b.classList.toggle('active', b.dataset.tab === key));
+  Object.entries(panels).forEach(
+    ([k,el]) => el.classList.toggle('hidden', k !== key)
+  );
+  // hide game overlay
+  document.getElementById('game-screen').classList.add('hidden');
+}
 
-// Game config placeholders
-let gravity, lift, pipeSpeed, gap;
-let player;
+// --- Leaderboard Persistence ---
+const lbList = document.getElementById('leaderboardList');
+function loadLeaderboard(){
+  const data = JSON.parse(localStorage.getItem('fbLeaderboard')||'[]');
+  lbList.innerHTML = data
+    .slice(0,5)
+    .map(e=>`<li>${e.name}: Score ${e.score}, Coins ${e.coins}</li>`)
+    .join('');
+}
+function saveScore(name,score,coins){
+  let arr = JSON.parse(localStorage.getItem('fbLeaderboard')||'[]');
+  arr.push({name,score,coins,date:Date.now()});
+  arr.sort((a,b)=>b.score-a.score||b.coins-a.coins);
+  localStorage.setItem('fbLeaderboard', JSON.stringify(arr.slice(0,10)));
+  loadLeaderboard();
+}
+loadLeaderboard();
 
-// Persistent high score
-let high = parseInt(localStorage.getItem('flappyHigh')) || 0;
-highEl.textContent = `High: ${high}`;
+// --- Settings UI ---
+const modeSelect   = document.getElementById('modeSelect');
+const customDiv    = document.getElementById('customSettings');
 
-// Shared game state
-let bird, pipes, score, running;
-let lastTime = 0;
+modeSelect.onchange = () => {
+  if(modeSelect.value === 'custom'){
+    customDiv.classList.remove('hidden');
+    customDiv.classList.add('custom-visible');
+  } else {
+    customDiv.classList.add('hidden');
+    customDiv.classList.remove('custom-visible');
+  }
+};
 
-// Initialize a new round
-function initGame() {
-  bird  = { x: 40, y: 120, w: 18, h: 18, v: 0 };
-  pipes = [];
-  score = 0;
-  running = true;
-  scoreEl.textContent = `Score: ${score}`;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBird();
+// Bird appearance controls
+const birdShapeSel = document.getElementById('birdShape');
+const birdSizeInp  = document.getElementById('birdSize');
+const birdColorInp = document.getElementById('birdColor');
+
+// --- Daily Challenge ---
+let seed = null;
+const challenges = [
+  'Collect 5 coins',
+  'Score at least 10 points',
+  'Survive 30 seconds',
+  'Pick up a shield power-up'
+];
+const dailyBtn  = document.getElementById('dailyBtn');
+const dailyDesc = document.getElementById('dailyDesc');
+
+dailyBtn.onclick = () => {
+  const d = new Date();
+  seed = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+  const idx = seed % challenges.length;
+  dailyDesc.textContent = `Today’s challenge: ${challenges[idx]}`;
+  dailyDesc.classList.remove('hidden');
+  dailyDesc.classList.add('custom-visible');
+  // auto-open custom panel
+  modeSelect.value = 'custom';
+  modeSelect.dispatchEvent(new Event('change'));
+};
+
+// --- Coin Bank & Shop ---
+const bankEl      = document.getElementById('bankCoins');
+const invShieldEl = document.getElementById('invShield');
+const invSlowEl   = document.getElementById('invSlow');
+const shopBtns    = document.querySelectorAll('#shop button[data-power]');
+const costs       = { shield:10, slow:8 };
+
+let bankCoins = parseInt(localStorage.getItem('fbBank')||'0',10);
+let inventory = JSON.parse(localStorage.getItem('fbInventory')||'{}');
+inventory.shield = inventory.shield||0;
+inventory.slow   = inventory.slow||0;
+
+function updateBankUI(){
+  bankEl.textContent      = bankCoins;
+  invShieldEl.textContent = inventory.shield;
+  invSlowEl.textContent   = inventory.slow;
+}
+shopBtns.forEach(btn => {
+  btn.onclick = () => {
+    const pw = btn.dataset.power, cost = costs[pw];
+    if(bankCoins < cost){
+      return alert('Not enough coins!');
+    }
+    bankCoins -= cost;
+    inventory[pw]++;
+    localStorage.setItem('fbBank', bankCoins);
+    localStorage.setItem('fbInventory', JSON.stringify(inventory));
+    updateBankUI();
+  };
+});
+updateBankUI();
+
+// --- Game Variables & DOM refs ---
+const startBtn  = document.getElementById('startBtn');
+const nameInput = document.getElementById('playerName');
+const gameScr   = document.getElementById('game-screen');
+
+const scoreEl   = document.getElementById('score');
+const coinsEl   = document.getElementById('coins');
+const powerEl   = document.getElementById('power');
+
+const canvas    = document.getElementById('gameCanvas');
+const ctx       = canvas.getContext('2d');
+
+const resetBtn  = document.getElementById('resetBtn');
+const homeBtn   = document.getElementById('homeBtn');
+
+const useShield = document.getElementById('useShieldBtn');
+const useSlow   = document.getElementById('useSlowBtn');
+const pwrCtrl   = document.getElementById('powerUpControls');
+
+let config, bird, pipes, score, coins;
+let birdSize, birdShape, birdColor;
+let baseSpeed, activePower, powerTimer;
+let running, lastTime;
+
+// seeded RNG
+function rng(){
+  seed = (seed*9301 + 49297) % 233280;
+  return seed/233280;
+}
+
+// --- Start Game Handler ---
+startBtn.onclick = () => {
+  // read physics mode
+  const m = modeSelect.value;
+  if(m==='easy')   config={gravity:300,lift:-200,speed:100,gap:120};
+  else if(m==='medium') config={gravity:400,lift:-250,speed:150,gap:90};
+  else if(m==='hard')   config={gravity:500,lift:-300,speed:200,gap:70};
+  else { // custom
+    config = {
+      gravity: +document.getElementById('inGravity').value,
+      lift:    +document.getElementById('inLift').value,
+      speed:   +document.getElementById('inSpeed').value,
+      gap:     +document.getElementById('inGap').value
+    };
+  }
+
+  // set bird appearance
+  birdShape = birdShapeSel.value;
+  birdSize  = +birdSizeInp.value;
+  birdColor = birdColorInp.value;
+
+  if(seed===null) seed = Math.random()*1e6;
+
+  // init state
+  bird   = { x:40, y:200, v:0 };
+  pipes  = []; score=0; coins=0;
+  baseSpeed  = config.speed;
+  activePower= null; powerTimer=0;
+
+  // HUD reset
+  scoreEl.textContent = 'Score: 0';
+  coinsEl.textContent = 'Coins: 0';
+  powerEl.textContent = 'Power-Up: –';
+
+  // show game
+  Object.values(panels).forEach(el=>el.classList.add('hidden'));
+  gameScr.classList.remove('hidden');
+  pwrCtrl.classList.remove('hidden');
+
   lastTime = performance.now();
+  running  = true;
   requestAnimationFrame(gameLoop);
-}
+};
 
-// Start button handler
-startBtn.addEventListener('click', () => {
-  player = document.getElementById('playerName').value.trim() || 'Player';
-  const lvl = document.getElementById('difficulty').value;
-
-  // per-second values
-  if (lvl === 'easy') {
-    gravity   = 300;   // px/s²
-    lift      = -200;  // px/s impulse
-    pipeSpeed = 100;   // px/s
-    gap       = 120;   // px
-  }
-  if (lvl === 'medium') {
-    gravity   = 400;
-    lift      = -250;
-    pipeSpeed = 150;
-    gap       = 90;
-  }
-  if (lvl === 'hard') {
-    gravity   = 500;
-    lift      = -300;
-    pipeSpeed = 200;
-    gap       = 70;
-  }
-
-  startScreen.classList.add('hidden');
-  gameScreen.classList.remove('hidden');
-  initGame();
-});
-
-// Reset button handler
-resetBtn.addEventListener('click', e => {
+// --- Reset & Home ---
+function doReset(e){ e.preventDefault(); startBtn.click(); }
+resetBtn.addEventListener('click', doReset);
+homeBtn.addEventListener('click', e=>{
   e.preventDefault();
-  initGame();
+  running = false;
+  switchPanel('settings');
 });
 
-// Draw the bird
-function drawBird() {
-  ctx.fillStyle = 'orange';
-  ctx.fillRect(bird.x, bird.y, bird.w, bird.h);
-}
+// --- Use Power-Up Buttons ---
+useShield.onclick = () => {
+  if(inventory.shield<1) return alert('No shields!');
+  inventory.shield--;
+  localStorage.setItem('fbInventory', JSON.stringify(inventory));
+  updateBankUI();
+  activePower='shield'; powerTimer=5;
+  powerEl.textContent='Power-Up: shield';
+};
+useSlow.onclick = () => {
+  if(inventory.slow<1) return alert('No slows!');
+  inventory.slow--;
+  localStorage.setItem('fbInventory', JSON.stringify(inventory));
+  updateBankUI();
+  activePower='slow'; powerTimer=5;
+  config.speed = baseSpeed*0.5;
+  powerEl.textContent='Power-Up: slow';
+};
 
-// Main loop with time delta
-function gameLoop(now) {
-  if (!running) return;
-  const dt = (now - lastTime) / 1000;  // delta in seconds
+// --- Game Loop ---
+function gameLoop(now){
+  if(!running) return;
+  const dt = (now - lastTime)/1000;
   lastTime = now;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // physics
+  bird.v += config.gravity*dt;
+  bird.y += bird.v*dt;
+  if(bird.y < 0 || bird.y + birdSize > canvas.height) return endGame();
 
-  // Bird physics: v += a * dt; y += v * dt
-  bird.v += gravity * dt;
-  bird.y += bird.v * dt;
-
-  // Out of bounds?
-  if (bird.y < 0 || bird.y + bird.h > canvas.height) {
-    return endGame();
+  // spawn pipes
+  if(!pipes.length || pipes[pipes.length-1].x < canvas.width - 150){
+    const top = rng()*(canvas.height-config.gap-80)+40;
+    pipes.push({
+      x: canvas.width,
+      top,
+      passed:false,
+      coin: rng()<0.3,
+      power: rng()<0.1? (rng()<0.5?'slow':'shield') : null
+    });
   }
 
-  drawBird();
-  updatePipes(dt);
+  // clear & draw bird
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = birdColor;
+  if(birdShape==='square'){
+    ctx.fillRect(bird.x, bird.y, birdSize, birdSize);
+  } else if(birdShape==='circle'){
+    ctx.beginPath();
+    ctx.arc(
+      bird.x + birdSize/2,
+      bird.y + birdSize/2,
+      birdSize/2, 0, 2*Math.PI
+    );
+    ctx.fill();
+  } else if(birdShape==='triangle'){
+    ctx.beginPath();
+    ctx.moveTo(bird.x + birdSize/2, bird.y);
+    ctx.lineTo(bird.x, bird.y + birdSize);
+    ctx.lineTo(bird.x + birdSize, bird.y + birdSize);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // pipes & collisions
+  pipes.forEach((p,i) => {
+    p.x -= config.speed*dt;
+    // draw pipes
+    ctx.fillStyle='green';
+    ctx.fillRect(p.x, 0, 24, p.top);
+    ctx.fillRect(p.x, p.top + config.gap, 24, canvas.height);
+
+    // coin
+    if(p.coin){
+      ctx.fillStyle='gold';
+      ctx.beginPath();
+      ctx.arc(p.x+12, p.top+config.gap/2, 6, 0, 2*Math.PI);
+      ctx.fill();
+    }
+    // power
+    if(p.power){
+      ctx.fillStyle = p.power==='slow'? 'cyan':'red';
+      ctx.fillRect(p.x+4, p.top+config.gap/2-4, 16, 16);
+    }
+
+    // collision & pickups
+    if(bird.x < p.x+24 && bird.x+birdSize > p.x){
+      const inGap = bird.y > p.top && bird.y+birdSize < p.top+config.gap;
+      if(!inGap){
+        if(activePower==='shield'){
+          activePower = null;
+          powerEl.textContent = 'Power-Up: –';
+        } else {
+          return endGame();
+        }
+      }
+      if(p.coin){
+        coins++; coinsEl.textContent=`Coins: ${coins}`;
+        p.coin=false;
+      }
+      if(p.power){
+        activePower = p.power; powerTimer=5;
+        powerEl.textContent = `Power-Up: ${activePower}`;
+        if(activePower==='slow') config.speed = baseSpeed*0.5;
+        p.power = null;
+      }
+    }
+
+    // scoring
+    if(!p.passed && p.x+24 < bird.x){
+      p.passed = true;
+      score++; scoreEl.textContent=`Score: ${score}`;
+    }
+    if(p.x+24 < 0) pipes.splice(i,1);
+  });
+
+  // power expiration
+  if(activePower && (powerTimer -= dt) <= 0){
+    if(activePower==='slow') config.speed = baseSpeed;
+    activePower = null;
+    powerEl.textContent = 'Power-Up: –';
+  }
+
   requestAnimationFrame(gameLoop);
 }
 
-function updatePipes(dt) {
-  // spawn
-  if (!pipes.length || pipes[pipes.length - 1].x < canvas.width - 140) {
-    const top = Math.random() * (canvas.height - gap - 40) + 20;
-    pipes.push({ x: canvas.width, top, passed: false });
-  }
-
-  pipes.forEach((p, i) => {
-    p.x -= pipeSpeed * dt;
-
-    // draw
-    ctx.fillStyle = 'green';
-    ctx.fillRect(p.x, 0, 24, p.top);
-    ctx.fillRect(p.x, p.top + gap, 24, canvas.height);
-
-    // collision
-    if (
-      bird.x < p.x + 24 &&
-      bird.x + bird.w > p.x &&
-      (bird.y < p.top || bird.y + bird.h > p.top + gap)
-    ) {
-      return endGame();
-    }
-
-    // score
-    if (!p.passed && p.x + 24 < bird.x) {
-      p.passed = true;
-      score++;
-      if (score > high) {
-        high = score;
-        localStorage.setItem('flappyHigh', high);
-        highEl.textContent = `High: ${high}`;
-      }
-      scoreEl.textContent = `Score: ${score}`;
-    }
-
-    // cleanup
-    if (p.x + 24 < 0) pipes.splice(i, 1);
-  });
-}
-
-// End game
-function endGame() {
+// --- End Game ---
+function endGame(){
   running = false;
-  setTimeout(() => {
-    alert(`${player}, Game Over!\nYour Score: ${score}`);
+  saveScore(nameInput.value||'Player', score, coins);
+  bankCoins += coins;
+  localStorage.setItem('fbBank', bankCoins);
+  updateBankUI();
+  setTimeout(()=>{
+    alert(`Game Over!\n${nameInput.value||'Player'}: Score ${score}, Coins ${coins}`);
   }, 50);
 }
 
-// Flap logic: instantaneous v = lift
-function flap() {
-  if (running) bird.v = lift;
-}
-
-// Input listeners
-window.addEventListener('keydown', e => {
-  if (e.code === 'Space') flap();
-});
-canvas.addEventListener('pointerdown', flap);
-canvas.addEventListener('touchstart', e => {
+// --- Flap ---
+function flap(e){
   e.preventDefault();
-  flap();
-}, { passive: false });
+  if(running) bird.v = config.lift;
+}
+window.addEventListener('keydown', e => { if(e.code==='Space') flap(e); });
+canvas.addEventListener('pointerdown', flap);
+canvas.addEventListener('touchstart', flap, { passive: false });
