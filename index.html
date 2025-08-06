@@ -2,41 +2,128 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Flappy Bird</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Flappy Bird Extended</title>
+  <link href="https://fonts.googleapis.com/css?family=Poppins:400,500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
 
-    <!-- START SCREEN -->
-    <div id="start-screen">
+    <!-- Header -->
+    <header>
       <h1>🐦 Flappy Bird</h1>
-      <div class="inputs">
-        <input type="text" id="playerName" placeholder="Enter your name">
-        <select id="difficulty">
-          <option value="easy">Easy</option>
-          <option value="medium" selected>Medium</option>
-          <option value="hard">Hard</option>
-        </select>
-        <button id="startBtn">Start Game</button>
-      </div>
-    </div>
+    </header>
 
-    <!-- GAME SCREEN -->
-    <div id="game-screen" class="hidden">
-      <div id="scoreboard">
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="settings">Settings</button>
+      <button class="tab"        data-tab="shop">Shop</button>
+      <button class="tab"        data-tab="leaderboard">Leaderboard</button>
+    </nav>
+
+    <!-- Panels -->
+    <main>
+      <!-- SETTINGS PANEL -->
+      <section id="settings" class="panel">
+        <div class="card">
+          <h2>Game Settings</h2>
+
+          <!-- Difficulty Mode -->
+          <label>
+            Mode:
+            <select id="modeSelect">
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+              <option value="custom">Custom</option>
+            </select>
+          </label>
+
+          <!-- Custom Physics -->
+          <div id="customSettings" class="hidden">
+            <label>Gravity: <input type="number" id="inGravity" value="400"></label>
+            <label>Lift:    <input type="number" id="inLift"    value="-250"></label>
+            <label>Speed:   <input type="number" id="inSpeed"   value="150"></label>
+            <label>Gap:     <input type="number" id="inGap"     value="90"></label>
+          </div>
+
+          <!-- Bird Appearance -->
+          <hr>
+          <h2>Bird Appearance</h2>
+          <label>
+            Shape:
+            <select id="birdShape">
+              <option value="square">Square</option>
+              <option value="circle">Circle</option>
+              <option value="triangle">Triangle</option>
+            </select>
+          </label>
+          <label>
+            Size:
+            <input type="range" id="birdSize" min="10" max="50" value="20">
+          </label>
+          <label>
+            Color:
+            <input type="color" id="birdColor" value="#FFA500">
+          </label>
+
+          <!-- Daily Challenge -->
+          <button id="dailyBtn" class="btn">Daily Challenge</button>
+          <p id="dailyDesc" class="hidden info-text"></p>
+
+          <!-- Player Name & Start -->
+          <input type="text" id="playerName" placeholder="Your Name" class="full-width">
+          <button id="startBtn" class="btn primary full-width">Start Game</button>
+        </div>
+      </section>
+
+      <!-- SHOP PANEL -->
+      <section id="shop" class="panel hidden">
+        <div class="card">
+          <h2>Coin Bank & Shop</h2>
+          <p>Bank Coins: <strong><span id="bankCoins">0</span></strong></p>
+          <div class="shop-item">
+            <span>Shield (10 coins)</span>
+            <button data-power="shield" class="btn small">Buy</button>
+            <span class="inv-count">You own <span id="invShield">0</span></span>
+          </div>
+          <div class="shop-item">
+            <span>Slow Time (8 coins)</span>
+            <button data-power="slow" class="btn small">Buy</button>
+            <span class="inv-count">You own <span id="invSlow">0</span></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- LEADERBOARD PANEL -->
+      <section id="leaderboard" class="panel hidden">
+        <div class="card">
+          <h2>🏆 Top Scores</h2>
+          <ol id="leaderboardList"></ol>
+        </div>
+      </section>
+    </main>
+
+    <!-- GAME OVERLAY -->
+    <div id="game-screen" class="game-screen hidden">
+      <div id="hud">
         <span id="score">Score: 0</span>
-        <span id="highScore">High: 0</span>
+        <span id="coins">Coins: 0</span>
+        <span id="power">Power-Up: –</span>
       </div>
       <canvas id="gameCanvas" width="300" height="400"></canvas>
-      <div class="inputs">
-        <button id="resetBtn">Reset</button>
+      <div id="powerUpControls" class="power-controls hidden">
+        <button id="useShieldBtn" class="btn small">Use Shield</button>
+        <button id="useSlowBtn"   class="btn small">Use Slow</button>
+      </div>
+      <div class="game-buttons">
+        <button id="resetBtn" class="btn">Reset</button>
+        <button id="homeBtn"  class="btn">🏠 Home</button>
       </div>
     </div>
 
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
