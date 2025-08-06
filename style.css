@@ -7,7 +7,7 @@ body {
   height: 100vh;
 }
 .container {
-  width: 100%; max-width: 380px;
+  width: 100vw; heigh: 100vh;
   background: #fff; border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   overflow: hidden;
@@ -86,11 +86,12 @@ input, select {
 }
 
 /* Game Overlay */
-.game-screen {
-  position: absolute; top: 0; left: 50%;
-  transform: translateX(-50%);
-  background: #fff; padding: 12px; border-radius: 8px;
-  text-align: center;
+#gameCanvas {
+  width: 100%;
+  height: calc(100% - 80px);  /* leave room for HUD (top) + buttons (bottom) */
+  object-fit: contain;        /* maintain aspect ratio, centered */
+  display: block;
+  margin: 0 auto;
 }
 #hud {
   display: flex; justify-content: space-around;
@@ -107,3 +108,4 @@ canvas {
 .game-buttons {
   display: flex; justify-content: space-between;
 }
+
